@@ -5,40 +5,39 @@ import PropTypes from 'prop-types';
 
 const modalRoot = document.querySelector('#modalRoot');
 
-export default function Modal({ onClose, pic }) {
+const Modal = ({ onClose, pic }) => {
   useEffect(() => {
-    const handleKeyDown = e => {
+    const handleKeyDown = (e) => {
       if (e.code === 'Escape') {
-        return onClose();
-      }
-    };
-
-    const handleClickAway = e => {
-      if (e.target.className.includes('Modal_overlay')) {
-        return onClose();
+        onClose();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('click', handleClickAway);
-
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('click', handleClickAway);
     };
-  });
+  }, [onClose]);
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
   return createPortal(
-    <div className={s.overlay}>
+    <div className={s.overlay} onClick={handleOverlayClick}>
       <div className={s.modal}>
         <img src={pic} alt="" />
       </div>
     </div>,
     modalRoot
   );
-}
+};
 
 Modal.propTypes = {
   onClose: PropTypes.func.isRequired,
   pic: PropTypes.string.isRequired,
 };
+
+export default Modal;

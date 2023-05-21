@@ -4,14 +4,14 @@ import s from './Searchbar.module.css'
 import { toast } from 'react-toastify';
 
 
-export default function Searchbar({ onSubmit }) {
+const Searchbar = ({ onSubmit }) => {
   const [query, setQuery] = useState('');
 
-  const handleInputChange = e => {
+  const handleInputChange = (e) => {
     setQuery(e.target.value.toLowerCase());
   };
 
-  const handleSubmit = event => {
+  const handleSubmit = (event) => {
     event.preventDefault();
 
     if (query.trim() === '') {
@@ -21,7 +21,7 @@ export default function Searchbar({ onSubmit }) {
 
     onSubmit(query);
   };
-  
+
   return (
     <header className={s.searchbar}>
       <form className={s.searchForm} onSubmit={handleSubmit}>
@@ -40,9 +40,10 @@ export default function Searchbar({ onSubmit }) {
       </form>
     </header>
   );
-      
-}
+};
 
 Searchbar.propTypes = {
   onSubmit: PropTypes.func.isRequired,
 };
+
+export default Searchbar;

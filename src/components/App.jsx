@@ -8,70 +8,124 @@ import ImageGallery from './ImageGallery/ImageGallery';
 import Loader from './Loader/Loader';
 import Button from './Button/Button';
 
-const API_KEY = '34966777-a1579da70d4a26e0e4c8e2fcd';
-const URL = 'https://pixabay.com/api/';
+import { fetchImg } from './Servises/api';
 
-export default function App() {
+const App = () => {
+  const URL = 'https://pixabay.com/api/';
+  const API_KEY = '34966777-a1579da70d4a26e0e4c8e2fcd';
+
   const [pictures, setPictures] = useState([]);
-  const [page, setPage] = useState(1);
+  const [error, setError] = useState('');
   const [status, setStatus] = useState('idle');
+  const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
-  const [totalHits, setTotalHits] = useState(null);
-  const [error, setError] = useState(null);
+  const [showBtn, setShowBtn] = useState(false);
 
   useEffect(() => {
-    if (query === '') {
-      return;
-    }
-    setStatus('pending');
-    const fetchImg = () => {
-      return fetch(
-        `${URL}?q=${query}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
-      )
-        .then(res => {
-          if (res.ok) {
-            return res.json();
-          }
-          return Promise.reject(new Error('Failed to find any images'));
-        })
-        .then(pictures => {
+    if (query !== '' || page !== 1) {
+      setStatus('pending');
+      fetchImg(URL, API_KEY, query, page)
+        .then((pictures) => {
           if (!pictures.total) {
-            toast.error('Did find anything, mate');
+            toast.error('Did not find anything, mate');
+            return;
           }
-          return pictures;
+          const selectedProperties = pictures.hits.map(({ id, largeImageURL, webformatURL }) => ({
+            id,
+            largeImageURL,
+            webformatURL,
+          }));
+          setPictures((prevPictures) => [...prevPictures, ...selectedProperties]);
+          setStatus('resolved');
+          setShowBtn(page < Math.ceil(pictures.totalHits / 12));
         })
-        .catch(error => setError(error) && setStatus('rejected'));
-    };
-    fetchImg().then(pictures => {
-      const selectedProperties = pictures.hits.map(
-        ({ id, largeImageURL, webformatURL }) => {
-          return { id, largeImageURL, webformatURL };
-        }
-      );
-      setPictures(prevState => [...prevState, ...selectedProperties]);
-      setStatus('resolved');
-      setTotalHits(pictures.total);
-    });
-  }, [page, query]);
+        .catch((error) => {
+          setError(error.message);
+          setStatus('rejected');
+        });
+    }
+  }, [URL, API_KEY, query, page]);
 
-  const processSubmit = query => {
+  const processSubmit = (query) => {
     setQuery(query);
-    setPage(1);
     setPictures([]);
+    setPage(1);
+    setShowBtn(false);
   };
 
   const handleLoadMore = () => {
-    setPage(prev => prev + 1);
+    setPage((prevPage) => prevPage + 1);
   };
 
   return (
     <>
       <Searchbar onSubmit={processSubmit} />
-      {pictures.length && <ImageGallery images={pictures} />}
-      {totalHits > pictures.length && <Button onClick={handleLoadMore} />}
+      {pictures.length > 0 && <ImageGallery images={pictures} />}
+      {showBtn && <Button onClick={handleLoadMore} />}
       {status === 'pending' && <Loader />}
-      {status === 'rejected' && { error }}
+      {error && <div>Error: {error}</div>}
       <ToastContainer autoClose={2000} />
     </>
   );
-}
+};
+
+export default App;
+
+// const App = () => {
+//   const [URL, setURL] = useState('https://pixabay.com/api/');
+//   const [API_KEY, setAPI_KEY] = useState('34966777-a1579da70d4a26e0e4c8e2fcd');
+//   const [pictures, setPictures] = useState([]);
+//   const [error, setError] = useState('');
+//   const [status, setStatus] = useState('idle');
+//   const [page, setPage] = useState(1);
+//   const [query, setQuery] = useState('');
+//   const [showBtn, setShowBtn] = useState(false);
+
+//   useEffect(() => {
+//     if (query !== '' || page !== 1) {
+//       setStatus('pending');
+//       fetchImg(URL, API_KEY, query, page)
+//         .then(pictures => {
+//           if (!pictures.total) {
+//             toast.error('Did not find anything, mate');
+//             return;
+//           }
+//           const selectedProperties = pictures.hits.map(({ id, largeImageURL, webformatURL }) => ({
+//             id,
+//             largeImageURL,
+//             webformatURL,
+//           }));
+//           setPictures(prevPictures => [...prevPictures, ...selectedProperties]);
+//           setStatus('resolved');
+//           setShowBtn(page < Math.ceil(pictures.totalHits / 12));
+//         })
+//         .catch(error => {
+//           setError(error);
+//           setStatus('rejected');
+//         });
+//     }
+//   }, [URL, API_KEY, query, page]);
+
+//   const processSubmit = query => {
+//     setQuery(query);
+//     setPictures([]);
+//     setPage(1);
+//     setShowBtn(true);
+//   };
+
+//   const handleLoadMore = () => {
+//     setPage(prevPage => prevPage + 1);
+//   };
+
+//   return (
+//     <>
+//       <Searchbar onSubmit={processSubmit} />
+//       {pictures.length > 0 && <ImageGallery images={pictures} />}
+//       {showBtn && <Button onClick={handleLoadMore} />}
+//       {status === 'pending' && <Loader />}
+//       <ToastContainer autoClose={2000} />
+//     </>
+//   );
+// };
+
+// export default App;
